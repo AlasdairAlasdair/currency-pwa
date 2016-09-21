@@ -24,7 +24,7 @@
     cardTemplate: document.querySelector('.cardTemplate'),
     container: document.querySelector('.main'),
     addDialog: document.querySelector('.dialog-container'),
-    daysOfWeek: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    daysOfWeek: [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   };
 
 
@@ -108,28 +108,20 @@
       }
     }
     cardLastUpdatedElem.textContent = data.created;
-
-    // card.querySelector('.description').textContent = current.text;
-    // card.querySelector('.date').textContent = current.date;
-    // card.querySelector('.current .icon').classList.add(app.getIconClass(current.code));
-    // card.querySelector('.current .temperature .value').textContent = Math.round(current.temp);
-    // card.querySelector('.current .sunrise').textContent = sunrise;
-    // card.querySelector('.current .sunset').textContent = sunset;
-    // card.querySelector('.current .humidity').textContent = Math.round(humidity) + '%';
-    // card.querySelector('.current .wind .value').textContent = Math.round(wind.speed);
-    // card.querySelector('.current .wind .direction').textContent = wind.direction;
-    // var nextDays = card.querySelectorAll('.future .oneday');
+    var previousDays = card.querySelectorAll('.history .oneday');
     var today = new Date();
     today = today.getDay();
-    for (var i = 0; i < 7; i++) {
-    //   var nextDay = nextDays[i];
-    //   var daily = data.channel.item.forecast[i];
-    //   if (daily && nextDay) {
-        // nextDay.querySelector('.date').textContent = app.daysOfWeek[(i + today) % 7];
-        // nextDay.querySelector('.icon').classList.add(app.getIconClass(daily.code));
-        // nextDay.querySelector('.temp-high .value').textContent = Math.round(daily.high);
-        // nextDay.querySelector('.temp-low .value').textContent = Math.round(daily.low);
-    //   }
+    
+    
+    var todaysName = app.daysOfWeek[today]
+        
+    for (var i = 7; i > 0; i--) {
+      var previousDay = previousDays[i];
+      if (previousDay) {
+        var currentDayName = app.daysOfWeek[(i + today) % 7];
+        previousDay.querySelector('.date').textContent = currentDayName;
+        // previousDay.querySelector('.icon').classList.add(app.getIconClass(daily.code));
+      }
     }
     if (app.isLoading) {
       app.spinner.setAttribute('hidden', true);
@@ -166,7 +158,8 @@
       caches.match(url).then(function(response) {
         if (response) {
           response.json().then(function updateFromCache(json) {
-            var results = json.query.results;
+            // var results = json.query.results;
+            var results = json;
             results.key = key;
             results.label = "GBP to USD";
             results.created = json.query.created;
@@ -183,10 +176,10 @@
       if (request.readyState === XMLHttpRequest.DONE) {
         if (request.status === 200) {
           var response = JSON.parse(request.response);
-          var results = response.query.results;
+          var results = response;
           results.key = key;
           results.label = label;
-          results.created = response.query.created;
+        //   results.created = response.created;
           app.updateForecastCard(results);
         }
       } else {
