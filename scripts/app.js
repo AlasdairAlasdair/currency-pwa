@@ -107,7 +107,6 @@
       if (previousDay) {
         var currentDayName = app.daysOfWeek[(i + today) % 7];
         previousDay.querySelector('.date').textContent = currentDayName;
-        // previousDay.querySelector('.icon').classList.add(app.getIconClass(daily.code));
       }
     }
     if (app.isLoading) {
@@ -133,8 +132,11 @@
    * freshest data.
    */
   app.getForecast = function(key, label) {
+      
+    var basecurrency = "GBP";
+    var currency = key;
     // can't use https
-    var url = 'http://api.fixer.io/latest?base=GBP&symbols=USD'
+    var url = 'http://api.fixer.io/latest?base=' + basecurrency + '&symbols=' + currency
     // TODO add cache logic here
     if ('caches' in window) {
       /*
@@ -147,11 +149,13 @@
           response.json().then(function updateFromCache(json) {
             // var results = json.query.results;
             var results = json;
+            
+            // dedup key and currency
             results.key = key;
-            results.label = "GBP to USD";
+            results.label = basecurrency + ' to ' +  currency;
             results.created = json.query.created;
-            results.basecurrency = "GBP";
-            results.currency = "USD";
+            results.basecurrency = basecurrency;
+            results.currency = currency;
             app.updateForecastCard(results);
           });
         }
@@ -198,7 +202,8 @@
   };
   
   var initialWeatherForecast = {
-    key: '2459115',
+      
+    key: 'USD',
     label: 'GBP to USD',
     created: '2016-07-22T01:00:00Z',
     basecurrency : "GBP",
