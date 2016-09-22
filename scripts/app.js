@@ -13,12 +13,8 @@
   };
 
 
-  /*****************************************************************************
-   *
-   * Event listeners for UI elements
-   *
-   ****************************************************************************/
-
+  // Event listeners for UI elements
+   
   document.getElementById('butRefresh').addEventListener('click', function() {
     // Refresh all of the forecasts
     app.updateForecasts();
@@ -50,13 +46,8 @@
   });
 
 
-  /*****************************************************************************
-   *
-   * Methods to update/refresh the UI
-   *
-   ****************************************************************************/
+// Methods to update/refresh the UI
 
-  // Toggles the visibility of the add new city dialog.
   app.toggleAddDialog = function(visible) {
     if (visible) {
       app.addDialog.classList.add('dialog-container--visible');
@@ -117,27 +108,14 @@
   };
 
 
-  /*****************************************************************************
-   *
-   * Methods for dealing with the model
-   *
-   ****************************************************************************/
-
-  /*
-   * Gets a forecast for a specific city and updates the card with the data.
-   * getForecast() first checks if the weather data is in the cache. If so,
-   * then it gets that data and populates the card with the cached data.
-   * Then, getForecast() goes to the network for fresh data. If the network
-   * request goes through, then the card gets updated a second time with the
-   * freshest data.
-   */
+  // Methods for dealing with the model
   app.getForecast = function(key, label) {
       
     var basecurrency = "GBP";
     var currency = key;
     // can't use https
     var url = 'http://api.fixer.io/latest?base=' + basecurrency + '&symbols=' + currency
-    // TODO add cache logic here
+    
     if ('caches' in window) {
       /*
        * Check if the service worker has already cached this city's weather
@@ -146,9 +124,7 @@
        */
       caches.match(url).then(function(response) {
         if (response) {
-          response.json().then(function updateFromCache(json) {
-            // var results = json.query.results;
-            var results = json;
+          response.json().then(function updateFromCache(results) {
             
             // dedup key and currency
             results.key = key;
@@ -213,12 +189,8 @@
     }
   };
 
-  /************************************************************************
-   *
-   * Code required to start the app
-   *
-   * NOTE: For simplicity we've used localStorage, you'd never want to do this for real.
-   ************************************************************************/
+  // start up code
+  // NOTE: For simplicity we've used localStorage, you'd never want to do this for real.
 
   app.selectedCities = localStorage.selectedCities;
   if (app.selectedCities) {
