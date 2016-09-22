@@ -12,41 +12,17 @@
     daysOfWeek: [ 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   };
 
-
-  // Event listeners for UI elements
-   
   document.getElementById('butRefresh').addEventListener('click', function() {
-    // Refresh all of the forecasts
     app.updateForecasts();
   });
 
   document.getElementById('butAdd').addEventListener('click', function() {
-    // Open/show the add new city dialog
     app.toggleAddDialog(true);
   });
 
-  document.getElementById('butAddCity').addEventListener('click', function() {
-    // Add the newly selected city
-    var select = document.getElementById('selectCityToAdd');
-    var selected = select.options[select.selectedIndex];
-    var key = selected.value;
-    var label = selected.textContent;
-    if (!app.selectedCities) {
-      app.selectedCities = [];
-    }
-    app.getForecast(key, label);
-    app.selectedCities.push({key: key, label: label});
-    app.saveSelectedCities();
-    app.toggleAddDialog(false);
-  });
-
   document.getElementById('butAddCancel').addEventListener('click', function() {
-    // Close the add new city dialog
     app.toggleAddDialog(false);
   });
-
-
-// Methods to update/refresh the UI
 
   app.toggleAddDialog = function(visible) {
     if (visible) {
@@ -56,19 +32,38 @@
     }
   };
 
-  // Updates a weather card with the latest weather forecast. If the card
-  // doesn't already exist, it's cloned from the template.
+  app.getLabel = function(base, currency){
+    return base + " to " + currency;
+  }
+
+  document.getElementById('butAddCity').addEventListener('click', function() {
+    var select = document.getElementById('selectCityToAdd');
+    var selected = select.options[select.selectedIndex];
+    
+    var currency = selected.value;
+    var label = app.getLabel('GBP', currency)
+    
+    if (!app.selectedCities) {
+      app.selectedCities = [];
+    }
+
+    app.getForecast(currency, label);
+    app.selectedCities.push({currency: currency, label: label});
+    app.saveSelectedCities();
+    app.toggleAddDialog(false);
+  });
+
   app.updateForecastCard = function(data) {
     var dataLastUpdated = new Date(data.created);
     
-    var card = app.visibleCards[data.key];
+    var card = app.visibleCards[data.currency];
     if (!card) {
       card = app.cardTemplate.cloneNode(true);
       card.classList.remove('cardTemplate');
       card.querySelector('.location').textContent = data.label;
       card.removeAttribute('hidden');
       app.container.appendChild(card);
-      app.visibleCards[data.key] = card;
+      app.visibleCards[data.currency] = card;
     }
 
     // Verifies the data provide is newer than what's already visible
@@ -84,22 +79,9 @@
       }
     }
     cardLastUpdatedElem.textContent = data.created;
-    // todo hackityhackhack
-    card.querySelector('.current .exchange .value').textContent = data.rates.USD
-    var previousDays = card.querySelectorAll('.history .oneday');
-    var today = new Date();
-    today = today.getDay();
+
+    card.querySelector('.current .exchange .value').textContent = data.rate;
     
-    
-    var todaysName = app.daysOfWeek[today]
-        
-    for (var i = 7; i > 0; i--) {
-      var previousDay = previousDays[i];
-      if (previousDay) {
-        var currentDayName = app.daysOfWeek[(i + today) % 7];
-        previousDay.querySelector('.date').textContent = currentDayName;
-      }
-    }
     if (app.isLoading) {
       app.spinner.setAttribute('hidden', true);
       app.container.removeAttribute('hidden');
@@ -107,13 +89,10 @@
     }
   };
 
-
-  // Methods for dealing with the model
-  app.getForecast = function(key, label) {
-      
+  app.getForecast = function(currency, label) {
+    // get everything relative to GBP for the moment
     var basecurrency = "GBP";
-    var currency = key;
-    // can't use https
+    // can't use https :(
     var url = 'http://api.fixer.io/latest?base=' + basecurrency + '&symbols=' + currency
     
     if ('caches' in window) {
@@ -126,12 +105,12 @@
         if (response) {
           response.json().then(function updateFromCache(results) {
             
-            // dedup key and currency
-            results.key = key;
-            results.label = basecurrency + ' to ' +  currency;
+            results.label = app.getLabel(basecurrency, currency);
             results.created = json.query.created;
             results.basecurrency = basecurrency;
             results.currency = currency;
+            results.rate = results.rates[currency];
+            
             app.updateForecastCard(results);
           });
         }
@@ -144,8 +123,11 @@
         if (request.status === 200) {
           var response = JSON.parse(request.response);
           var results = response;
-          results.key = key;
+          results.currency = currency;
           results.label = label;
+          
+          results.rate = results.rates[currency]
+          
         //   results.created = response.created;
           app.updateForecastCard(results);
         }
@@ -172,39 +154,26 @@
     localStorage.selectedCities = selectedCities;
   };
 
-  // todo fix
-  app.getIconClass = function(weatherCode) {
-    return 'partly-cloudy-day';
-  };
-  
   var initialWeatherForecast = {
-      
-    key: 'USD',
-    label: 'GBP to USD',
     created: '2016-07-22T01:00:00Z',
     basecurrency : "GBP",
     currency : "USD",
-    rates : {
-        USD : 1.2345
-    }
+    label: app.getLabel("GBP", "USD"),
+    rate :  1.23456
   };
 
-  // start up code
-  // NOTE: For simplicity we've used localStorage, you'd never want to do this for real.
-
+  // start up code. For simplicity we've used localStorage, you'd never want to do this for real.
   app.selectedCities = localStorage.selectedCities;
   if (app.selectedCities) {
     app.selectedCities = JSON.parse(app.selectedCities);
     app.selectedCities.forEach(function(city) {
-      app.getForecast(city.key, city.label);
+      app.getForecast(city.currency, city.label);
     });
   } else {
-    /* The user is using the app for the first time, or the user has not
-     * saved any cities, so show the user some fake data.
-     */
+    // The user is using the app for the first time, or the user has not saved any cities, so show the user some fake data.
     app.updateForecastCard(initialWeatherForecast);
     app.selectedCities = [
-      {key: initialWeatherForecast.key, label: initialWeatherForecast.label}
+      {currency: initialWeatherForecast.currency, label: initialWeatherForecast.label}
     ];
     app.saveSelectedCities();
   }
