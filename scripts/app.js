@@ -118,7 +118,7 @@
           var response = JSON.parse(request.response);
           var results = response;
           results.currency = currency;
-          results.label = label;
+          results.label = app.getLabel(basecurrency, currency);
           
           results.rate = results.rates[currency]
           
