@@ -73,8 +73,12 @@
         return;
       }
     }
+
     cardLastUpdatedElem.textContent = data.created;
     card.querySelector('.current .exchange .value').textContent = data.rate;
+    card.querySelector('.current .icon').classList.add(data.currency);
+
+
     if (app.isLoading) {
       app.spinner.setAttribute('hidden', true);
       app.container.removeAttribute('hidden');
@@ -149,11 +153,6 @@
   app.saveSelectedCities = function() {
     var selectedCities = JSON.stringify(app.selectedCities);
     localStorage.selectedCities = selectedCities;
-  };
-
-  app.getIconClass = function(weatherCode) {
-    weatherCode = parseInt(weatherCode);
-        return 'clear-day';
   };
 
   var initialWeatherForecast = {
