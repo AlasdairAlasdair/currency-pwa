@@ -25,6 +25,7 @@
     var selected = select.options[select.selectedIndex];
     var currency = selected.value;
     var label = selected.textContent;
+
     if (!app.selectedCities) {
       app.selectedCities = [];
     }
@@ -99,7 +100,8 @@
           response.json().then(function updateFromCache(json) {
             
             results.label = app.getLabel(basecurrency, currency);
-            results.created = json.query.created;
+            results.created = json.query.date;
+            // results.created = json.query.created;
             results.basecurrency = basecurrency;
             results.currency = currency;
             results.rate = results.rates[currency];
@@ -118,12 +120,11 @@
           var response = JSON.parse(request.response);
           var results = response;
           results.currency = currency;
-          // results.label = app.getLabel(basecurrency, currency);
-          results.label = label;
+          results.label = app.getLabel(basecurrency, currency);
           
           results.rate = results.rates[currency]
           
-          results.created = response.created;
+          results.created = response.date;
           app.updateForecastCard(results);
         }
       } else {
@@ -165,12 +166,13 @@
 
   app.selectedCities = localStorage.selectedCities;
   if (app.selectedCities) {
+    // subsequent loads
     app.selectedCities = JSON.parse(app.selectedCities);
     app.selectedCities.forEach(function(city) {
       app.getForecast(city.currency, city.label);
-      // app.getForecast(city.key, city.label);
     });
   } else {
+    // first load
     app.updateForecastCard(initialWeatherForecast);
     app.selectedCities = [
       {currency: initialWeatherForecast.currency, label: initialWeatherForecast.label}
