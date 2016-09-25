@@ -20,6 +20,21 @@
     app.toggleAddDialog(true);
   });
 
+  document.getElementById('butAddCity').addEventListener('click', function() {
+    var select = document.getElementById('selectCityToAdd');
+    var selected = select.options[select.selectedIndex];
+    var currency = selected.value;
+    var label = selected.textContent;
+
+    if (!app.selectedCities) {
+      app.selectedCities = [];
+    }
+    app.getForecast(currency, label);
+    app.selectedCities.push({currency: currency, label: label});
+    app.saveSelectedCities();
+    app.toggleAddDialog(false);
+  });
+
   document.getElementById('butAddCancel').addEventListener('click', function() {
     app.toggleAddDialog(false);
   });
@@ -30,30 +45,10 @@
     } else {
       app.addDialog.classList.remove('dialog-container--visible');
     }
-  };
-
-  app.getLabel = function(base, currency){
-    return base + " to " + currency;
-  }
-
-  document.getElementById('butAddCity').addEventListener('click', function() {
-    var select = document.getElementById('selectCityToAdd');
-    var selected = select.options[select.selectedIndex];
-    
-    var currency = selected.value;
-    var label = app.getLabel('GBP', currency)
-    
-    if (!app.selectedCities) {
-      app.selectedCities = [];
-    }
-
-    app.getForecast(currency, label);
-    app.selectedCities.push({currency: currency, label: label});
-    app.saveSelectedCities();
-    app.toggleAddDialog(false);
-  });
+  };    
 
   app.updateForecastCard = function(data) {
+    
     var dataLastUpdated = new Date(data.created);
     
     var card = app.visibleCards[data.currency];
@@ -78,10 +73,12 @@
         return;
       }
     }
-    cardLastUpdatedElem.textContent = data.created;
 
+    cardLastUpdatedElem.textContent = data.created;
     card.querySelector('.current .exchange .value').textContent = data.rate;
-    
+    card.querySelector('.current .icon').classList.add(data.currency);
+
+
     if (app.isLoading) {
       app.spinner.setAttribute('hidden', true);
       app.container.removeAttribute('hidden');
@@ -89,12 +86,13 @@
     }
   };
 
+
   app.getForecast = function(currency, label) {
     // get everything relative to GBP for the moment
     var basecurrency = "GBP";
     // can't use https :(
     var url = 'http://api.fixer.io/latest?base=' + basecurrency + '&symbols=' + currency
-    
+
     if ('caches' in window) {
       /*
        * Check if the service worker has already cached this city's weather
@@ -103,15 +101,17 @@
        */
       caches.match(url).then(function(response) {
         if (response) {
-          response.json().then(function updateFromCache(results) {
+          response.json().then(function updateFromCache(json) {
             
             results.label = app.getLabel(basecurrency, currency);
-            results.created = json.query.created;
+            results.created = json.query.date;
+            // results.created = json.query.created;
             results.basecurrency = basecurrency;
             results.currency = currency;
             results.rate = results.rates[currency];
             
             app.updateForecastCard(results);
+
           });
         }
       });
@@ -124,15 +124,14 @@
           var response = JSON.parse(request.response);
           var results = response;
           results.currency = currency;
-          results.label = label;
+          results.label = app.getLabel(basecurrency, currency);
           
           results.rate = results.rates[currency]
           
-        //   results.created = response.created;
+          results.created = response.date;
           app.updateForecastCard(results);
         }
       } else {
-        // Return the initial weather forecast since no data is available.
         app.updateForecastCard(initialWeatherForecast);
       }
     };
@@ -140,7 +139,10 @@
     request.send();
   };
 
-  // Iterate all of the cards and attempt to get the latest forecast data
+  app.getLabel = function(base, currency){
+    return base + " to " + currency;
+  }
+
   app.updateForecasts = function() {
     var keys = Object.keys(app.visibleCards);
     keys.forEach(function(key) {
@@ -148,7 +150,6 @@
     });
   };
 
-  // Save list of cities to localStorage.
   app.saveSelectedCities = function() {
     var selectedCities = JSON.stringify(app.selectedCities);
     localStorage.selectedCities = selectedCities;
@@ -162,15 +163,15 @@
     rate :  1.23456
   };
 
-  // start up code. For simplicity we've used localStorage, you'd never want to do this for real.
   app.selectedCities = localStorage.selectedCities;
   if (app.selectedCities) {
+    // subsequent loads
     app.selectedCities = JSON.parse(app.selectedCities);
     app.selectedCities.forEach(function(city) {
       app.getForecast(city.currency, city.label);
     });
   } else {
-    // The user is using the app for the first time, or the user has not saved any cities, so show the user some fake data.
+    // first load
     app.updateForecastCard(initialWeatherForecast);
     app.selectedCities = [
       {currency: initialWeatherForecast.currency, label: initialWeatherForecast.label}
