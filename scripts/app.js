@@ -90,8 +90,7 @@
   app.getForecast = function(currency, label) {
     // get everything relative to GBP for the moment
     var basecurrency = "GBP";
-    // can't use https :(
-    var url = 'http://api.fixer.io/latest?base=' + basecurrency + '&symbols=' + currency
+    var url = 'https://api.fixer.io/latest?base=' + basecurrency + '&symbols=' + currency
 
     if ('caches' in window) {
       /*
